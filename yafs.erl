@@ -1,5 +1,5 @@
 -module(yafs).
--export([start/1, ls/1, get_file/1, make_directory/1]).
+-export([start/1, ls/1, get_file/1, make_directory/1, put_file/2]).
 
 start(Root) -> register(yafs, spawn(fun() -> loop(Root) end)).
 
@@ -13,7 +13,10 @@ loop(Root) ->
             Client ! {self(), file:read_file(Full)};
         {Client, {make_directory, Dir}} ->
             Full = filename:join(Root, Dir),
-            Client ! {self(), file:make_dir(Full)}
+            Client ! {self(), file:make_dir(Full)};
+        {Client, {put_file, File, Content}} ->
+            Full = filename:join(Root, File),
+            Client ! {self(), file:write_file(Full, Content)}
     end,
     loop(Root).
 
@@ -33,6 +36,13 @@ get_file(File) ->
 
 make_directory(Dir) ->
     yafs ! {self(), {make_directory, Dir}},
+    FileServer = whereis(yafs),
+    receive
+        {FileServer, Message} -> Message
+    end.
+
+put_file(File, Content) ->
+    yafs ! {self(), {put_file, File, Content}},
     FileServer = whereis(yafs),
     receive
         {FileServer, Message} -> Message

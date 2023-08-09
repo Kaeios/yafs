@@ -16,6 +16,8 @@ loop(MM) ->
             MM ! {send, yafs:get_file(File)};
         {chan, MM, {make_directory, Dir}} ->
             MM ! {send, yafs:make_directory(Dir)};
+        {chan, MM, {put_file, File, Content}} ->
+            MM ! {send, yafs:put_file(File, Content)};
         {chan_closed, MM} ->
             true
     end,
